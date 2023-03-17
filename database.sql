@@ -1,3 +1,4 @@
+create database if not exists ecommerce;
 use ecommerce;
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `updated_at` TIMESTAMP NOT NULL DEFAULT NOW(),
   `deleted_at` TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_products_categories_idx` (`category` ASC) VISIBLE,
+  INDEX `fk_products_categories_idx` (`category` ASC),
   CONSTRAINT `fk_products_categories`
     FOREIGN KEY (`category`)
     REFERENCES `categories` (`id`)
@@ -50,6 +51,7 @@ ENGINE = InnoDB DEFAULT CHARSET = utf8;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `address` (
   `id` INT NOT NULL AUTO_INCREMENT,
+  `label` VARCHAR(255) NOT NULL,
   `zipcode` VARCHAR(10) NOT NULL,
   `country` VARCHAR(4) NOT NULL,
   `address` VARCHAR(255) NOT NULL,
@@ -71,8 +73,8 @@ CREATE TABLE IF NOT EXISTS `users_has_address` (
   `users_id` INT NOT NULL,
   `address_id` INT NOT NULL,
   PRIMARY KEY (`users_id`, `address_id`),
-  INDEX `fk_users_has_address_address1_idx` (`address_id` ASC) VISIBLE,
-  INDEX `fk_users_has_address_users1_idx` (`users_id` ASC) VISIBLE,
+  INDEX `fk_users_has_address_address1_idx` (`address_id` ASC),
+  INDEX `fk_users_has_address_users1_idx` (`users_id` ASC),
   CONSTRAINT `fk_users_has_address_users1`
     FOREIGN KEY (`users_id`)
     REFERENCES `users` (`id`)
@@ -104,15 +106,21 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `user` INT NOT NULL,
   `total` INT NOT NULL DEFAULT 0,
   `status` INT NOT NULL,
+  `address` INT NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT NOW(),
   `updated_at` TIMESTAMP NOT NULL DEFAULT NOW(),
   `deleted_at` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
-  INDEX `fk_orders_users1_idx` (`user` ASC) VISIBLE,
-  INDEX `fk_orders_status_order1_idx` (`status` ASC) VISIBLE,
+  INDEX `fk_orders_users1_idx` (`user` ASC),
+  INDEX `fk_orders_status_order1_idx` (`status` ASC),
   CONSTRAINT `fk_orders_users1`
     FOREIGN KEY (`user`)
     REFERENCES `users` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_orders_address1`
+    FOREIGN KEY (`address`)
+    REFERENCES `address` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_orders_status_order1`
@@ -132,7 +140,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   `quantity` INT NOT NULL DEFAULT 0,
   `price` INT NOT NULL DEFAULT 0,
   PRIMARY KEY (`order`, `product`),
-  INDEX `fk_order_items_products1_idx` (`product` ASC) VISIBLE,
+  INDEX `fk_order_items_products1_idx` (`product` ASC),
   CONSTRAINT `fk_order_items_orders1`
     FOREIGN KEY (`order`)
     REFERENCES `orders` (`id`)
@@ -193,27 +201,27 @@ INSERT INTO `users` (`name`, `email`) VALUES
   ('Grace Lee', 'grace.lee@example.com'),
   ('Vinícius Marcili', 'vinipetter@gmail.com');
 
-INSERT INTO `address` (`zipcode`, `country`, `address`, `number`, `complement`, `city`, `state`) VALUES 
-('11111-111', 'BR', 'Rua Alegria', '123', NULL, 'São Paulo', 'SP'),
-('22222-222', 'BR', 'Avenida Liberdade', '456', NULL, 'Rio de Janeiro', 'RJ'),
-('33333-333', 'BR', 'Rua da Praia', '789', 'Loja 2', 'Salvador', 'BA'),
-('44444-444', 'BR', 'Rua da Amizade', '555', 'Sala 3', 'Belo Horizonte', 'MG'),
-('55555-555', 'BR', 'Rua dos Sonhos', '888', NULL, 'Curitiba', 'PR'),
-('66666-666', 'BR', 'Avenida Central', '777', 'Loja 1', 'Fortaleza', 'CE'),
-('77777-777', 'BR', 'Rua da Paz', '246', NULL, 'Recife', 'PE'),
-('88888-888', 'BR', 'Avenida dos Girassóis', '1200', 'Apto. 501', 'Goiania', 'GO'),
-('99999-999', 'BR', 'Rua da Harmonia', '330', NULL, 'Porto Alegre', 'RS'),
-('12345-678', 'BR', 'Avenida Paulista', '1000', 'Conjunto 1503', 'São Paulo', 'SP'),
-('23456-789', 'BR', 'Rua das Flores', '200', NULL, 'Florianópolis', 'SC'),
-('34567-890', 'BR', 'Avenida Brasil', '500', 'Loja 5', 'Rio de Janeiro', 'RJ'),
-('45678-901', 'BR', 'Rua do Sol', '100', NULL, 'Natal', 'RN'),
-('56789-012', 'BR', 'Avenida Atlântica', '1500', 'Apartamento 2001', 'Rio de Janeiro', 'RJ'),
-('67890-123', 'BR', 'Rua das Pedras', '300', NULL, 'Búzios', 'RJ'),
-('78901-234', 'BR', 'Avenida Sete de Setembro', '600', 'Sala 10', 'Salvador', 'BA'),
-('89012-345', 'BR', 'Rua do Carmo', '400', NULL, 'Recife', 'PE'),
-('90123-456', 'BR', 'Avenida Beira-Mar', '800', 'Apartamento 1003', 'Fortaleza', 'CE'),
-('01234-567', 'BR', 'Rua da Consolação', '700', 'Conjunto 305', 'São Paulo', 'SP'),
-('12345-678', 'BR', 'Avenida Rui Barbosa', '900', NULL, 'Recife', 'PE');
+INSERT INTO `address` (`zipcode`, `country`, `address`, `number`, `complement`, `city`, `state`, `label`) VALUES 
+('11111-111', 'BR', 'Rua Alegria', '123', NULL, 'São Paulo', 'SP', 'Casa'),
+('22222-222', 'BR', 'Avenida Liberdade', '456', NULL, 'Rio de Janeiro', 'RJ', 'Casa'),
+('33333-333', 'BR', 'Rua da Praia', '789', 'Loja 2', 'Salvador', 'BA', 'Casa'),
+('44444-444', 'BR', 'Rua da Amizade', '555', 'Sala 3', 'Belo Horizonte', 'MG', 'Casa'),
+('55555-555', 'BR', 'Rua dos Sonhos', '888', NULL, 'Curitiba', 'PR', 'Casa'),
+('66666-666', 'BR', 'Avenida Central', '777', 'Loja 1', 'Fortaleza', 'CE', 'Casa'),
+('77777-777', 'BR', 'Rua da Paz', '246', NULL, 'Recife', 'PE', 'Casa'),
+('88888-888', 'BR', 'Avenida dos Girassóis', '1200', 'Apto. 501', 'Goiania', 'GO', 'Casa'),
+('99999-999', 'BR', 'Rua da Harmonia', '330', NULL, 'Porto Alegre', 'RS', 'Casa'),
+('12345-678', 'BR', 'Avenida Paulista', '1000', 'Conjunto 1503', 'São Paulo', 'SP', 'Casa'),
+('23456-789', 'BR', 'Rua das Flores', '200', NULL, 'Florianópolis', 'SC', 'Casa'),
+('34567-890', 'BR', 'Avenida Brasil', '500', 'Loja 5', 'Rio de Janeiro', 'RJ', 'Casa'),
+('45678-901', 'BR', 'Rua do Sol', '100', NULL, 'Natal', 'RN', 'Casa'),
+('56789-012', 'BR', 'Avenida Atlântica', '1500', 'Apartamento 2001', 'Rio de Janeiro', 'RJ', 'Casa'),
+('67890-123', 'BR', 'Rua das Pedras', '300', NULL, 'Búzios', 'RJ', 'Casa'),
+('78901-234', 'BR', 'Avenida Sete de Setembro', '600', 'Sala 10', 'Salvador', 'BA', 'Casa'),
+('89012-345', 'BR', 'Rua do Carmo', '400', NULL, 'Recife', 'PE', 'Casa'),
+('90123-456', 'BR', 'Avenida Beira-Mar', '800', 'Apartamento 1003', 'Fortaleza', 'CE', 'Casa'),
+('01234-567', 'BR', 'Rua da Consolação', '700', 'Conjunto 305', 'São Paulo', 'SP', 'Casa'),
+('12345-678', 'BR', 'Avenida Rui Barbosa', '900', NULL, 'Recife', 'PE', 'Casa');
 
 
 INSERT INTO `users_has_address` VALUES
@@ -239,36 +247,6 @@ INSERT INTO `users_has_address` VALUES
 (20, 20);
 
  INSERT INTO `products` (`name`,`description`,`category`,`price`,`stock`) VALUES
-  ('T-shirt','A simple and comfortable T-shirt',1,20,100),
- ('Jeans','Classic blue jeans',1,50,50),
- ('Sneakers','Sporty and stylish sneakers',1,80,30),
- ('Hoodie','A warm and cozy hoodie',1,40,80),
- ('Running Shoes','Lightweight and comfortable shoes for running',1,70,20),
- ('Shorts','Comfortable and lightweight shorts',1,30,60),
- ('Backpack','A durable and spacious backpack',2,50,40),
- ('Suitcase','A high-quality and stylish suitcase',2,100,30),
- ('Messenger Bag','A versatile and stylish bag',2,60,50),
- ('Wallet','A sleek and minimalist wallet',2,20,100),
- ('Briefcase','A professional and elegant briefcase',2,80,20),
- ('Smartphone','A powerful and high-end smartphone',3,1000,10),
- ('Tablet','A portable and versatile tablet',3,600,20),
- ('Laptop','A high-performance and reliable laptop',3,1200,5),
- ('Smartwatch','A stylish and feature-packed smartwatch',3,300,30),
- ('Headphones','Premium noise-cancelling headphones',3,350,20),
- ('Camera','A professional-grade camera with advanced features',4,2000,5),
- ('Lens','A high-quality lens for professional photography',4,1000,10),
- ('Tripod','A sturdy and reliable tripod for cameras',4,150,30),
- ('Flash','A powerful external flash for cameras',4,200,20),
- ('Drone','A high-tech drone for aerial photography and videography',4,1500,3),
- ('Coffee Maker','A high-quality and easy-to-use coffee maker',5,100,30),
- ('Kettle','A stylish and efficient electric kettle',5,50,50),
- ('Toaster','A reliable and functional toaster',5,40,80),
- ('Blender','A powerful and versatile blender',5,80,20),
- ('Mixer','A high-performance and durable mixer',5,120,10),
- ('Knife Set','A set of high-quality and sharp knives',6,150,20),
- ('Cutting Board','A durable and easy-to-clean cutting board',6,30,50),
- ('Cookware Set','A comprehensive set of high-quality cookware',6,300,10),
- ('Spatula','A versatile and durable spatula',6,10,100),
  ('T-shirt','A simple and comfortable T-shirt',1,20,100),
  ('Jeans','Classic blue jeans',1,50,50),
  ('Sneakers','Sporty and stylish sneakers',1,80,30),
@@ -345,13 +323,13 @@ INSERT INTO `users_has_address` VALUES
  ('Razer Blade 15','15-inch gaming laptop with 10th Gen Intel Core i7 processor and NVIDIA GeForce RTX 3060 GPU',15,1799,15),
  ('LG OLED CX','55-inch 4K TV with OLED display and support for Dolby Vision IQ and Dolby Atmos',12,1499,10),
  ('Microsoft Surface Laptop 4','13.5-inch touchscreen laptop with AMD Ryzen 7 processor and 16GB RAM',15,1499,20),
- ('Samsung T7 Touch','Portable SSD with fingerprint security and up to 1TB storage capacity',21,189,50),
- ('Apple iPad mini','7.9-inch tablet with A15 Bionic chip and 5G connectivity',22,499,30),
+ ('Samsung T7 Touch','Portable SSD with fingerprint security and up to 1TB storage capacity',11,189,50),
+ ('Apple iPad mini','7.9-inch tablet with A15 Bionic chip and 5G connectivity',11,499,30),
  ('Beats Studio Buds','True wireless earbuds with active noise-cancellation and up to 8 hours of battery life',20,149,40),
  ('LG Gram 17','17-inch ultrabook with 11th Gen Intel Core i7 processor and up to 19.5 hours of battery life',15,1499,10),
  ('Nikon Z6 II','Full-frame mirrorless camera with 24.5MP sensor and 4K UHD video recording',19,1999,10),
- ('DJI Mini 2','Ultra-compact drone with 4K video and 31-minute flight time',23,449,20),
- ('Breville Barista Express','Semi-automatic espresso machine with built-in conical burr grinder',24,699,15),
+ ('DJI Mini 2','Ultra-compact drone with 4K video and 31-minute flight time',11,449,20),
+ ('Breville Barista Express','Semi-automatic espresso machine with built-in conical burr grinder',11,699,15),
  ('Fitbit Luxe','Fitness tracker with color display and up to 5 days of battery life',14,149,50),
  ('Wireless Headphones','Noise-canceling headphones with a long battery life',5,120,50),
  ('Smart Watch','Fitness tracker with heart rate monitor and sleep tracking',8,150,30),
@@ -368,3 +346,7 @@ INSERT INTO `users_has_address` VALUES
  ('Yoga Mat','Eco-friendly and non-slip mat for yoga and fitness',15,30,50),
  ('Dash Cam','High-resolution dash cam for car safety and security',18,120,10),
  ('Solar Charger','Portable charger with solar panels for outdoor use',17,50,30);
+
+ INSERT INTO orders (id, user, total, status, address) VALUES (1, 20, 28000, 2, 1);
+INSERT INTO order_items (`order`, product, quantity, price) VALUES (1, 1, 2, 2000), (1, 2, 1, 5000), (1, 3, 1, 8000), (1, 4, 1, 4000), (1, 5, 1, 7000);
+
